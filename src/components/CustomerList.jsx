@@ -37,7 +37,6 @@ export default function CustomerList() {
     }
 
     const fetchUsers = () => {
-        console.log(`page being indexed: ${page}`);
         let params = requestParams(page, pageSize);
 
         axios
@@ -48,7 +47,6 @@ export default function CustomerList() {
                 }
             )
             .then((response) => {
-                console.log(response.data.response);
                 setCustomers(response.data.response);
                 setPageSize(response.data.pagination.size);
                 setCount(response.data.pagination.pages)
