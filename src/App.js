@@ -9,7 +9,7 @@ function App() {
 
   return (
     <div className={classes.root}>
-      <Container maxWidth="md">
+      <Container maxWidth="lg">
         <CustomerList />
       </Container>
     </div>

@@ -7,6 +7,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Pagination from '@mui/material/Pagination';
+import Button from '@mui/material/Button';
 import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import FormControl from '@mui/material/FormControl';
@@ -17,7 +18,7 @@ import useStyles from '../styles';
 
 import axios from 'axios';
 
-const baseURL = "http://f137-105-163-223-5.ngrok.io/api/v1/customers";
+const baseURL = "http://f137-105-163-223-5.ngrok.io/api/v1/";
 
 export default function CustomerList() {
 
@@ -27,11 +28,12 @@ export default function CustomerList() {
     const [count, setCount] = React.useState(0)
     const [pageSize, setPageSize] = React.useState(10)
     const [customers, setCustomers] = React.useState(null);
-    const [searchCode, setSearchCode] = React.useState("");
-    const [phoneNumber, setPhoneNumber] = React.useState("");
-    const [phoneNumberState, setPhoneNumberState] = React.useState("");
+    const [phoneNumber, setPhoneNumber] = React.useState(null);
+    const [phoneNumberState, setPhoneNumberState] = React.useState(null);
+    const [country, setCountry] = React.useState(null);
+    const [filterFlag, setFilterFlag] = React.useState(false);
 
-    const requestParams = (page, pageSize) => {
+    const requestParams = (page, pageSize, filterFlag) => {
         let params = {}
 
         if (page) {
@@ -42,6 +44,13 @@ export default function CustomerList() {
             params["size"] = pageSize
         }
 
+        if (filterFlag) {
+            if (params["page"] < 0) params["page"] = 0
+            params["country"] = country
+            params["state"] = phoneNumberState
+            params["phone"] = phoneNumber
+        }
+
         return params
     }
 
@@ -49,26 +58,50 @@ export default function CustomerList() {
         setPage(value);
     }
 
-    const fetchUsers = () => {
-        let params = requestParams(page, pageSize);
+    const fetchUsers = (to_filter = false) => {
+        let params = requestParams(page, pageSize, filterFlag);
+        const url = filterFlag ? "customer/filters" : "customers";
+
+        console.log(url);
+        console.log(params);
 
         axios
             .get(
-                baseURL,
+                baseURL + url,
                 {
                     params
                 }
             )
             .then((response) => {
+                console.log(response);
+                setFilterFlag(false);
                 setCustomers(response.data.response);
                 setPageSize(response.data.pagination.size);
                 setCount(response.data.pagination.pages)
+
+                setPhoneNumber(null);
+                setPhoneNumberState(null);
+                setCountry(null);
             })
             .catch(err => console.log(err));
     };
 
     React.useEffect(() => {
-        fetchUsers();
+        console.log("breakpoint 4");
+        if (page < 0) {
+            console.log("breakpoint 5");
+            setPage(1);
+        }
+    }, [filterFlag]);
+
+    React.useEffect(() => {
+        console.log("breakpoint 2");
+        if (page > 0) {
+            fetchUsers();
+        } else if (page < 0) {
+            console.log("breakpoint 3");
+            setFilterFlag(true);
+        }
     }, [page]);
 
     return (
@@ -76,43 +109,62 @@ export default function CustomerList() {
             <div
                 className={classes.searchBar}
             >
-                <FormControl>
-                    <InputLabel htmlFor="component-outlined">Country Code</InputLabel>
-                    <OutlinedInput
-                        id="component-outlined"
-                        value={searchCode}
-                        onChange={setSearchCode}
-                        label="Country Code"
-                    />
-                </FormControl>
-                <FormControl>
+                <FormControl
+                    size='small'
+                >
                     <InputLabel htmlFor="component-outlined">Phone Number</InputLabel>
                     <OutlinedInput
                         id="component-outlined"
-                        value={phoneNumber}
-                        onChange={setPhoneNumber}
+                        onChange={(e) => { 
+                            e.target.value === '' ? setPhoneNumber(null) : setPhoneNumber(e.target.value) 
+                        }}
                         label="Phone Number"
                     />
                 </FormControl>
-                <FormControl>
-                    <InputLabel htmlFor="component-outlined">State</InputLabel>
+                <FormControl
+                    size='small'
+                >
+                    <InputLabel htmlFor="component-outlined">Valid</InputLabel>
                     <OutlinedInput
                         id="component-outlined"
-                        value={phoneNumberState}
-                        onChange={setPhoneNumberState}
+                        onChange={(e) => { 
+                            e.target.value === '' ? setPhoneNumberState(null) : setPhoneNumberState(e.target.value)
+                        }}
                         label="State"
                     />
                 </FormControl>
-                <SearchIcon fontSize='large' className={classes.searchIcon}/>
+                <FormControl
+                    size='small'
+                >
+                    <InputLabel htmlFor="component-outlined">Country</InputLabel>
+                    <OutlinedInput
+                        id="component-outlined"
+                        onChange={(e) => { 
+                            e.target.value === '' ? setCountry(null) : setCountry(e.target.value)
+                        }}
+                        label="Country"
+                    />
+                </FormControl>
+                <Button 
+                    variant="outlined"
+                    onClick={(e) => { 
+                        console.log("breakpoint 1");
+                        setPage(-1)
+                    }}
+                >
+                    <SearchIcon 
+                        fontSize='small'
+                    />
+                </Button>
             </div>
             <TableContainer component={Paper}>
-                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                <Table sx={{ minWidth: 650 }} size='small' aria-label="simple table">
                     <TableHead>
                         <TableRow>
                             <TableCell>Name</TableCell>
-                            <TableCell align="right">Phone Number</TableCell>
-                            <TableCell align="right">Status</TableCell>
-                            <TableCell align="right">Country</TableCell>
+                            <TableCell>Phone Number</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Country</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -121,12 +173,12 @@ export default function CustomerList() {
                                 key={row.name}
                                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                             >
-                                <TableCell component="th" scope="row">
+                                <TableCell>
                                     {row.name}
                                 </TableCell>
-                                <TableCell align="right">{row.phone}</TableCell>
-                                <TableCell align="right">{row.valid}</TableCell>
-                                <TableCell align="right">{row.country}</TableCell>
+                                <TableCell>{row.phone}</TableCell>
+                                <TableCell>{row.valid}</TableCell>
+                                <TableCell>{row.country}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
