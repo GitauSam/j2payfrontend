@@ -1,11 +1,18 @@
 import CustomerList from './components/CustomerList';
 import Container from '@mui/material/Container';
 
+import useStyles from './styles';
+
 function App() {
+
+  const classes = useStyles();
+
   return (
-    <Container maxWidth="sm">
-      <CustomerList />
-    </Container>
+    <div className={classes.root}>
+      <Container maxWidth="md">
+        <CustomerList />
+      </Container>
+    </div>
   );
 }
 
